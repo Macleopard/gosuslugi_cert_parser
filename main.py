@@ -1,31 +1,26 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
+import requests as req
+import json
 url = "https://www.gosuslugi.ru/covid-cert/status/14d22f26-9cf2-4437-addd-51f155c63f72?lang=ru"
 
 def main():
-    service = Service(ChromeDriverManager().install())
-    op = webdriver.ChromeOptions()
-    op.add_argument('headless')
-    driver = webdriver.Chrome(service=service)
-    # driver = webdriver.Chrome(service=service, option=op) если нужно, чтобы не было видно браузера, может лагать
-    # без появления
-    driver.get(url)
-    time.sleep(2)
-    cert_id = driver.find_element(By.ID, 'cert-id').text
-    status = driver.find_element(By.ID, 'status').text
-    full_name = driver.find_element(By.ID, 'full-name').text
-    passport = driver.find_element(By.XPATH, '//*[@id="other-attrs"]/div[2]/div[2]').text
-    date = driver.find_element(By.XPATH, '//*[@id="other-attrs"]/div[1]/div[2]').text
+    gos_id = url[url.rfind('/')+1:url.find('?')]
+    print(gos_id)
+    json_url = "https://www.gosuslugi.ru/api/covid-cert-checker/v3/cert/status/" + gos_id
+    response = req.get(json_url)
+    json_text = response.text
+    doc = json.loads(json_text)
+    cert_id = doc["certId"]
+    expiration_date = doc["expiredAt"]
+    valid_from_date = doc["validFrom"]
+    full_name = doc["attrs"][0]['value']
+    birthday_date = doc["attrs"][1]['value']
+    passport = doc["attrs"][2]['value']
     print(cert_id)
-    print(status)
+    print(valid_from_date)
+    print(expiration_date)
     print(full_name)
-    print(date)
+    print(birthday_date)
     print(passport)
-    driver.close()
-
 
 if __name__ == "__main__":
     main()
